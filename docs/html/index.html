@@ -1,0 +1,887 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pycerberus documentation &mdash; pycerberus v0.4.2 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="pycerberus v0.4.2 documentation" href="#" />
+    <link rel="next" title="Available validators" href="validators/index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="validators/index.html" title="Available validators"
+             accesskey="N">next</a> |</li>
+        <li><a href="#">pycerberus v0.4.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pycerberus-documentation">
+<h1>pycerberus documentation<a class="headerlink" href="#pycerberus-documentation" title="Permalink to this headline">¶</a></h1>
+<p>pycerberus is a framework to check user data thoroughly so that you can protect
+your application from malicious (or just garbled) input data.</p>
+<ul class="simple">
+<li><strong>Remove stupid code which converts input values:</strong> After values are validated, you
+can work with real Python types instead of strings - e.g. 42 instead of &#8216;42&#8217;,
+convert database IDs to model objects transparently.</li>
+<li><strong>Implement custom validation rules:</strong> Writing custom validators is
+straightforward, everything is well documented and pycerberus only uses very
+little Python magic.</li>
+<li><strong>Focus on your value-adding application code:</strong> Save time by implementing every
+input validation rule only once, but 100% right instead of implementing a
+dozen different half-baked solutions.</li>
+<li><strong>Ready for global business:</strong> i18n support (based on GNU gettext) is built in,
+adding custom translations is easy.</li>
+<li><strong>Tune it for your needs:</strong> You can implement custom behavior in your validators,
+e.g. fetch translations from a database instead of using gettext or define
+custom translations for built-in validators.</li>
+<li><strong>Use it wherever you like:</strong> pycerberus is used in a SMTP server, trac
+macros as well as web applications - there are no dependencies on a specific
+context like web development.</li>
+</ul>
+<div class="section" id="installation-and-setup">
+<h2>Installation and Setup<a class="headerlink" href="#installation-and-setup" title="Permalink to this headline">¶</a></h2>
+<p>pycerberus is just a Python library which uses setuptools so it does not require
+a special setup. It has no dependencies besides the standard Python library.
+There are some optional packages which you can choose to install:</p>
+<ul class="simple">
+<li><strong>Babel</strong> is the most convenient option to generate the gettext catalog files
+so you can see localized error messages.</li>
+<li>I&#8217;m using <strong>nosetests</strong> (&#8220;nose&#8221;) to run all the automated tests.</li>
+</ul>
+<p>pycerberus has been tested on <strong>Python 2.3-2.7</strong> as well as <strong>Python 3</strong>. To know
+more about Python 3 support (and its limitations), please read the section
+<a class="reference internal" href="#python3"><em>Python 3 Support</em></a>.</p>
+</div>
+<div class="section" id="background">
+<h2>Background<a class="headerlink" href="#background" title="Permalink to this headline">¶</a></h2>
+<p>In every software you must check carefully that untrusted user input data
+matches your expectations. Unvalidated user input is a common source of security
+flaws. However many checks are repetitive and validation logic tends to be
+scattered all around the code. Because basic checks are duplicated, developers
+forget to check also for uncommon edge cases. Eventually there is often also
+some code to convert the input data (usually strings) to more convenient Python
+data types like int or bool.</p>
+<p>pycerberus is a framework that tackles these common problems and allows
+you to write tailored validators to perform additional checks. Furthermore the
+framework also has built-in support for less common (but important) use cases
+like internationalization.</p>
+<p>The framework itself is heavily inspired by <a class="reference external" href="http://www.formencode.org">FormEncode</a>
+by Ian Bicking. Therefore most of <a class="reference external" href="http://www.formencode.org/Design.html">FormEncode&#8217;s design rationale</a>
+is directly applicable to pycerberus. However several things about FormEncode
+annoyed me so much that I decided to write my own library when I needed one for
+my SMTP server project <a class="reference external" href="http://www.schwarz.eu/opensource/projects/pymta">pymta</a>.</p>
+</div>
+<div class="section" id="philosophy-and-design">
+<h2>Philosophy and Design<a class="headerlink" href="#philosophy-and-design" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="rules-are-declared-explicitly-separating-policy-from-mechanism">
+<h3>Rules are declared explicitly: Separating policy from mechanism<a class="headerlink" href="#rules-are-declared-explicitly-separating-policy-from-mechanism" title="Permalink to this headline">¶</a></h3>
+<p>pycerberus separates validation rules (&#8220;Validators&#8221;) from the objects they
+validate against. It might be tempting to derive the validation rules from
+restrictions you specified earlier (e.g. from a class which is mapped by an ORM
+to a database). However that approach completely ignores that validation
+typically depends on context: In an API you have typically a lot more freedom in
+regard to allowed values compared to a public web interface where input needs to
+conform to a lot more checks. In a system where you declare the validation
+explicitly, this is possible. Also it is quite easy writing some code that
+generates a bottom line of validation rules automatically based on your ORM
+model and add additional restrictions depending on the context.</p>
+<p>As pycerberus is completely context-agnostic (not being bundled with a specific
+framework), you can use it in many different places (e.g. web applications with
+different frameworks, server applications, check parameters in a library, …).</p>
+<p>Further reading: <a class="reference external" href="http://www.formencode.org/Design.html">FormEncode&#8217;s design rationale</a> -
+most of the design ideas are also present in pycerberus.</p>
+</div>
+</div>
+<div class="section" id="development-status">
+<h2>Development Status<a class="headerlink" href="#development-status" title="Permalink to this headline">¶</a></h2>
+<p>Currently (March 2010, version 0.3) pycerberus is at a very basic stage -
+though with very solid foundations. The API for single validators is basically
+complete, i18n support is built in and there is decent documentation covering
+all important aspects. You can check multiple values (e.g. a web form) easily
+using a validation Schema (&#8220;compound validator&#8221;).</p>
+<p>The future development will focus on <em>repeating fields</em> (list of values). After
+that, I&#8217;ll try to increase the number of <em>built-in validators for
+specific domains</em> (e.g. <em>correct</em> email address validation, validating host names,
+localized numbers). Another interesting topic will be <em>integration into different
+frameworks</em> like <a class="reference external" href="http://www.turbogears.org">TurboGears</a> and
+<a class="reference external" href="http://trac.edgewall.org">trac</a>.</p>
+<p>However I have to say that I&#8217;m pretty satisfied with the current status so
+adding more features to pycerberus won&#8217;t be my #1 priority in the next months.
+The current API and functionality was well-suited even when
+<a class="reference external" href="http://www.schwarz.eu/opensource/projects/pymta">validating input parameters of a SMTP server</a>
+so I think most use cases should be actually covered.</p>
+</div>
+<div class="section" id="using-validators">
+<h2>Using Validators<a class="headerlink" href="#using-validators" title="Permalink to this headline">¶</a></h2>
+<p>In pycerberus &#8220;Validators&#8221; are used to specify validation rules which ensure
+that the input matches your expectations. Every basic validator validates a
+just single value (e.g. one specific input field in a web application). When
+the validation was successful, the validated and converted value is returned.
+If something is wrong with the data, an exception is raised:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pycerberus.validators</span> <span class="kn">import</span> <span class="n">IntegerValidator</span>
+<span class="n">IntegerValidator</span><span class="p">()</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s">&#39;42&#39;</span><span class="p">)</span> <span class="c"># returns 42 as int</span>
+</pre></div>
+</div>
+<p>pycerberus puts conversion and validation together in one call because of two
+main reasons:</p>
+<ul class="simple">
+<li>As a user you need to convert input data (usually strings) anyway into a more
+sensible format (e.g. int). These lines of code are redundant because you
+declared in the validator already what the value should be.</li>
+<li>During the validation process, it is very easy to do also the conversion. In
+fact many validations are done just by trying to do a conversion and catch
+all exceptions that were raised during that process.</li>
+</ul>
+<div class="section" id="validation-errors">
+<h3>Validation Errors<a class="headerlink" href="#validation-errors" title="Permalink to this headline">¶</a></h3>
+<p>Every validation error will trigger an exception, usually an <tt class="docutils literal"><span class="pre">InvalidDataError</span></tt>.
+This exception will contain a translated error message which can be presented to
+the user, a key so you can identify the exact error programmatically and the
+original, unmodified value:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pycerberus.errors</span> <span class="kn">import</span> <span class="n">InvalidDataError</span>
+<span class="kn">from</span> <span class="nn">pycerberus.validators</span> <span class="kn">import</span> <span class="n">IntegerValidator</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">IntegerValidator</span><span class="p">()</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">InvalidDataError</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">details</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">details</span><span class="p">()</span>
+    <span class="n">details</span><span class="o">.</span><span class="n">msg</span><span class="p">()</span>         <span class="c"># u&#39;Please enter a number.&#39;</span>
+    <span class="n">details</span><span class="o">.</span><span class="n">key</span><span class="p">()</span>         <span class="c"># &#39;invalid_number&#39;</span>
+    <span class="n">details</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>       <span class="c"># &#39;foo&#39;</span>
+    <span class="n">details</span><span class="o">.</span><span class="n">context</span><span class="p">()</span>     <span class="c"># {}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="configuring-validators">
+<h3>Configuring Validators<a class="headerlink" href="#configuring-validators" title="Permalink to this headline">¶</a></h3>
+<p>You can configure the behavior of the validator when instantiating it. For
+example, if you pass <tt class="docutils literal"><span class="pre">required=False</span></tt> to the constructor, most validators will
+also accept <tt class="xref docutils literal"><span class="pre">None</span></tt> as a valid value:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">IntegerValidator</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>  <span class="c"># -&gt; validation error</span>
+<span class="n">IntegerValidator</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span> <span class="c"># None</span>
+</pre></div>
+</div>
+<p>Validators support different configuration options which are explained along the
+validator description.</p>
+</div>
+<div class="section" id="context">
+<h3>Context<a class="headerlink" href="#context" title="Permalink to this headline">¶</a></h3>
+<p>All validators support an optional <tt class="docutils literal"><span class="pre">context</span></tt> argument (which defaults to an
+emtpy dict). It is used to plug validators into your application and make
+them aware of the overall system state: For example a validator must know which
+locale it should use to translate an error message to the correct language
+without relying on some global variables:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">context</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;locale&#39;</span><span class="p">:</span> <span class="s">&#39;de&#39;</span><span class="p">}</span>
+<span class="n">validator</span> <span class="o">=</span> <span class="n">IntegerValidator</span><span class="p">()</span>
+<span class="n">validator</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">)</span> <span class="c"># u&#39;Bitte geben Sie eine Zahl ein.&#39;</span>
+</pre></div>
+</div>
+<p>The context variable is especially useful when writing custom validators -
+locale is the only context information that pycerberus itself cares about.</p>
+</div>
+</div>
+<div class="section" id="available-validators">
+<h2>Available validators<a class="headerlink" href="#available-validators" title="Permalink to this headline">¶</a></h2>
+<p>pycerberus contains some basic validators already. You can use them as they are
+or use them as a basis for more specialized validators.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="validators/index.html">Available validators</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="writing-your-own-validators">
+<h2>Writing your own validators<a class="headerlink" href="#writing-your-own-validators" title="Permalink to this headline">¶</a></h2>
+<p>After all, using only built-in validators won&#8217;t help you much: You&#8217;ll need
+custom validation rules which means that you need to write your own validators.</p>
+<p>pycerberus comes with two classes that can serve as a good base when you start
+writing a custom validator: The <tt class="docutils literal"><span class="pre">BaseValidator</span></tt> only provides the absolutely
+required set of API so you have maximum freedom. The <tt class="docutils literal"><span class="pre">Validator</span></tt> class itself
+is inherited from the <tt class="docutils literal"><span class="pre">BaseValidator</span></tt> and defines a more sophisticated API
+and i18n support. Usually you should use the <tt class="docutils literal"><span class="pre">Validator</span></tt> class.</p>
+<div class="section" id="basevalidator">
+<h3>BaseValidator<a class="headerlink" href="#basevalidator" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="pycerberus.api.BaseValidator">
+<em class="property">class </em><tt class="descclassname">pycerberus.api.</tt><tt class="descname">BaseValidator</tt><big>(</big><em>self</em><big>)</big><a class="headerlink" href="#pycerberus.api.BaseValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>The BaseValidator implements only the minimally required methods. 
+Therefore it does not put many constraints on you. Most users probably want 
+to use the <tt class="docutils literal"><span class="pre">Validator</span></tt> class which already implements some commonly used 
+features.</p>
+<dl class="method">
+<dt id="pycerberus.api.BaseValidator.as_string">
+<tt class="descname">as_string</tt><big>(</big><em>value</em>, <em>context=None</em><big>)</big><a class="headerlink" href="#pycerberus.api.BaseValidator.as_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the (Python) value as string which could be converted back to
+the given value using this validator. This is useful for widget 
+libraries like ToscaWidgets.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.api.BaseValidator.error">
+<tt class="descname">error</tt><big>(</big><em>key</em>, <em>value</em>, <em>context</em>, <em>errorclass=&lt;class 'pycerberus.errors.InvalidDataError'&gt;</em>, <em>**values</em><big>)</big><a class="headerlink" href="#pycerberus.api.BaseValidator.error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raise an InvalidDataError for the given key.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.api.BaseValidator.keys">
+<tt class="descname">keys</tt><big>(</big><big>)</big><a class="headerlink" href="#pycerberus.api.BaseValidator.keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all keys defined by this specific validator class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.api.BaseValidator.message_for_key">
+<tt class="descname">message_for_key</tt><big>(</big><em>key</em>, <em>context</em><big>)</big><a class="headerlink" href="#pycerberus.api.BaseValidator.message_for_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a message for a specific key. Implement this method if you 
+want to avoid calls to messages() which might be costly (otherwise 
+implementing this method is optional).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.api.BaseValidator.messages">
+<tt class="descname">messages</tt><big>(</big><big>)</big><a class="headerlink" href="#pycerberus.api.BaseValidator.messages" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all messages which are defined by this validator as a 
+key/message dictionary. Alternatively you can create a class-level
+dictionary which contains these keys/messages.</p>
+<p>You must declare all your messages here so that all keys are known 
+after this method was called.</p>
+<p>Calling this method might be costly when you have a lot of messages and 
+returning them is expensive. You can reduce the overhead in some 
+situations by implementing <tt class="docutils literal"><span class="pre">message_for_key()</span></tt></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.api.BaseValidator.process">
+<tt class="descname">process</tt><big>(</big><em>value</em>, <em>context=None</em><big>)</big><a class="headerlink" href="#pycerberus.api.BaseValidator.process" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the method to validate your input. The validator returns a
+(Python) representation of the given input <tt class="docutils literal"><span class="pre">value</span></tt>.</p>
+<p>In case of errors a <tt class="docutils literal"><span class="pre">InvalidDataError</span></tt> is thrown.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="validator">
+<h3>Validator<a class="headerlink" href="#validator" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="pycerberus.api.Validator">
+<em class="property">class </em><tt class="descclassname">pycerberus.api.</tt><tt class="descname">Validator</tt><big>(</big><em>self</em>, <em>default=NoValueSet</em>, <em>required=NoValueSet</em>, <em>strip=False</em><big>)</big><a class="headerlink" href="#pycerberus.api.Validator" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Validator is the base class of most validators and implements 
+some commonly used features like required values (raise exception if no
+value was provided) or default values in case no value is given.</p>
+<p>This validator splits conversion and validation into two separate steps:
+When a value is <tt class="docutils literal"><span class="pre">process()``ed,</span> <span class="pre">the</span> <span class="pre">validator</span> <span class="pre">first</span> <span class="pre">calls</span> <span class="pre">``convert()</span></tt> 
+which performs some checks on the value and eventually returns the converted
+value. Only if the value was converted correctly, the <tt class="docutils literal"><span class="pre">validate()</span></tt> 
+function can do additional checks on the converted value and possibly raise 
+an Exception in case of errors. If you only want to do additional checks 
+(but no conversion) in your validator, you can implement <tt class="docutils literal"><span class="pre">validate()</span></tt> and
+simply assume that you get the correct Python type (e.g. int).</p>
+<p>Of course if you can also raise a <tt class="docutils literal"><span class="pre">ValidationError</span></tt> inside of <tt class="docutils literal"><span class="pre">convert()</span></tt> -
+often errors can only be detected during the conversion process.</p>
+<p>By default, a validator will raise an <tt class="docutils literal"><span class="pre">InvalidDataError</span></tt> if no value was
+given (unless you set a default value). If <tt class="docutils literal"><span class="pre">required</span></tt> is False, the 
+default is None. All exceptions thrown by validators must be derived from 
+<tt class="docutils literal"><span class="pre">ValidationError</span></tt>. Exceptions caused by invalid user input should use 
+<tt class="docutils literal"><span class="pre">InvalidDataError</span></tt> or one of the subclasses.</p>
+<p>If <tt class="docutils literal"><span class="pre">strip</span></tt> is True (default is False) and the input value has a <tt class="docutils literal"><span class="pre">strip()</span></tt>
+method, the input will be stripped before it is tested for empty values and
+passed to the <tt class="docutils literal"><span class="pre">convert()</span></tt>/<tt class="docutils literal"><span class="pre">validate()</span></tt> methods.</p>
+<p>In order to prevent programmer errors, an exception will be raised if 
+you set <tt class="docutils literal"><span class="pre">required</span></tt> to True but provide a default value as well.</p>
+<dl class="method">
+<dt id="pycerberus.api.Validator.convert">
+<tt class="descname">convert</tt><big>(</big><em>value</em>, <em>context</em><big>)</big><a class="headerlink" href="#pycerberus.api.Validator.convert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the input value to a suitable Python instance which is 
+returned. If the input is invalid, raise an <tt class="docutils literal"><span class="pre">InvalidDataError</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.api.Validator.empty_value">
+<tt class="descname">empty_value</tt><big>(</big><em>context</em><big>)</big><a class="headerlink" href="#pycerberus.api.Validator.empty_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the &#8216;empty&#8217; value for this validator (usually None).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.api.Validator.is_empty">
+<tt class="descname">is_empty</tt><big>(</big><em>value</em>, <em>context</em><big>)</big><a class="headerlink" href="#pycerberus.api.Validator.is_empty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decide if the value is considered an empty value.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.api.Validator.validate">
+<tt class="descname">validate</tt><big>(</big><em>converted_value</em>, <em>context</em><big>)</big><a class="headerlink" href="#pycerberus.api.Validator.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform additional checks on the value which was processed 
+successfully before (otherwise this method is not called). Raise an 
+InvalidDataError if the input data is invalid.</p>
+<p>You can implement only this method in your validator if you just want to
+add additional restrictions without touching the actual conversion.</p>
+<p>This method must not modify the <tt class="docutils literal"><span class="pre">converted_value</span></tt>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="miscellaneous">
+<h3>Miscellaneous<a class="headerlink" href="#miscellaneous" title="Permalink to this headline">¶</a></h3>
+<p>pycerberus uses <a class="reference external" href="http://www.häcker.net/trac/browser/open-source/python-simple-super/trunk/simple_super.py">simple_super</a>
+so you can just say &#8216;self.super()&#8217; in your custom validator classes. This will
+call the super implementation with just the same parameters as your method was
+called.</p>
+<p>Validators need to be thread-safe as one instance might be used several times.
+Therefore you must not add additional attributes to your validator instance
+after you called Validator&#8217;s constructor. To prevent unexperienced programmers
+falling in that trap, a &#8216;&#8217;Validator&#8217;&#8217; will raise an exception if you try to set
+an attribute. If you don&#8217;t like this behavior, you can set
+&#8216;_is_internal_state_frozen&#8217; to False before calling Validator&#8217;s constructor.</p>
+</div>
+<div class="section" id="putting-all-together-a-simple-validator">
+<h3>Putting all together - A simple validator<a class="headerlink" href="#putting-all-together-a-simple-validator" title="Permalink to this headline">¶</a></h3>
+<p>Now it&#8217;s time to put it all together. This validator demonstrates most of the
+API as explained so far:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">UnicodeValidator</span><span class="p">(</span><span class="n">Validator</span><span class="p">):</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">super</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_length</span> <span class="o">=</span> <span class="nb">max</span>
+    
+    <span class="k">def</span> <span class="nf">messages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+                <span class="s">&#39;invalid_type&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">u&#39;Validator got unexpected input (expected string, got </span><span class="si">%(classname)s</span><span class="s">).&#39;</span><span class="p">),</span>
+                <span class="s">&#39;too_long&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">u&#39;Please enter at maximum </span><span class="si">%(max_length) c</span><span class="s">haracters.&#39;</span><span class="p">)</span>
+               <span class="p">}</span>
+    <span class="c"># Alternatively you could also declare a class-level variable:</span>
+    <span class="c"># messages = {...}</span>
+    
+    <span class="k">def</span> <span class="nf">convert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">unicode</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s">&#39;UTF-8&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">classname</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;invalid_type&#39;</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">classname</span><span class="o">=</span><span class="n">classname</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">converted_value</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_length</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">converted_value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_length</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;too_long&#39;</span><span class="p">,</span> <span class="n">converted_value</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_max_length</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The validator will convert all input to unicode strings (using the UTF-8
+encoding). It also checks for a maximum length of the string.</p>
+<p>You can see that all the conversion is done in <tt class="docutils literal"><span class="pre">convert()</span></tt> while additional
+validation is encapsulated in <tt class="docutils literal"><span class="pre">validate()</span></tt>. This can help you keeping your
+methods small.</p>
+<p>In case there is an error the <tt class="docutils literal"><span class="pre">error()</span></tt> method will raise an <tt class="docutils literal"><span class="pre">InvalidDataError</span></tt>.
+You select the error message to show by passing a string constant <tt class="docutils literal"><span class="pre">key</span></tt> which
+identifies the message. The key can be used later to adapt the user interface
+without relying the message itself (e.g. show an additional help box in the user
+interface if the user typed in the wrong password).</p>
+<p>The error messages are declared in the <tt class="docutils literal"><span class="pre">messages()</span></tt>. You&#8217;ll notice that the
+message strings can also contain variable parts. You can use these variable
+parts to give the user some additional hints about what was wrong with the data.</p>
+</div>
+</div>
+<div class="section" id="internationalization">
+<h2>Internationalization<a class="headerlink" href="#internationalization" title="Permalink to this headline">¶</a></h2>
+<p>Modern applications must be able to handle different languages.
+Internationalization (i18n) in pycerberus refers to validating
+locale-dependent input data (e.g. different decimal separator characters) as
+well as validation errors in different languages. The former aspect is not yet
+covered by default but you should be able to write custom validators easily.</p>
+<p>All messages from validators included in pycerberus can be translated in
+different languages using the standard gettext library. The language of
+validation error messages will be chosen depending on the locale which is given
+in the state dictionary,</p>
+<p>i18n support in pycerberus is a bit broader than just translating
+existing error messages. i18n becomes interesting when you write your own
+validators (based on the ones that come with pycerberus) and your translations
+need to play along with the built-in ones:</p>
+<ul class="simple">
+<li>Translate only the messages you defined, keep the existing pycerberus translations.</li>
+<li>If you don&#8217;t like the existing pycerberus translations, you can define your
+own without even changing a single line or file in pycerberus.</li>
+<li>Specify additional translation options per validator class (e.g. a different
+gettext domain or a different directory where your translations are stored).</li>
+<li>Even though pycerberus uses the well-known gettext mechanism to retrieve
+translations, you can use any other source as well (e.g. a database or a XML
+file).</li>
+</ul>
+<p>All i18n support in pycerberus aims to provide custom validators with a
+nice, simple-to-use API while maintaining the flexibility that serious
+applications need.</p>
+<div class="section" id="get-translated-error-messages">
+<h3>Get translated error messages<a class="headerlink" href="#get-translated-error-messages" title="Permalink to this headline">¶</a></h3>
+<p>If you want to get translated error messages from a validator, you set the
+correct &#8216;&#8217;context&#8217;&#8216;. formencode looks for a key named &#8216;locale&#8217; in the context
+dictionary:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">validator</span> <span class="o">=</span> <span class="n">IntegerValidator</span><span class="p">()</span>
+<span class="n">validator</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;locale&#39;</span><span class="p">:</span> <span class="s">&#39;en&#39;</span><span class="p">})</span> <span class="c"># u&#39;Please enter a number.&#39;</span>
+<span class="n">validator</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;locale&#39;</span><span class="p">:</span> <span class="s">&#39;de&#39;</span><span class="p">})</span> <span class="c"># u&#39;Bitte geben Sie eine Zahl ein.&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="internal-gettext-details">
+<h3>Internal gettext details<a class="headerlink" href="#internal-gettext-details" title="Permalink to this headline">¶</a></h3>
+<p>Usually you don&#8217;t have to know much about how pycerberus uses gettext internally.
+Just for completeness: The default domain is &#8216;pycerberus&#8217;. By default
+translations (.mo files) are loaded from <tt class="docutils literal"><span class="pre">pycerberus.locales</span></tt>, with a fall back
+to the system-wide locale dir &#8216;&#8217;/usr/share/locale&#8217;&#8216;.</p>
+</div>
+<div class="section" id="translate-your-custom-messages">
+<h3>Translate your custom messages<a class="headerlink" href="#translate-your-custom-messages" title="Permalink to this headline">¶</a></h3>
+<p>To translate messages from a custom validator, you need to declare them in
+the messages() method and mark the message strings as translatable:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pycerberus.api</span> <span class="kn">import</span> <span class="n">Validator</span>
+<span class="kn">from</span> <span class="nn">pycerberus.i18n</span> <span class="kn">import</span> <span class="n">_</span>
+
+<span class="k">class</span> <span class="nc">MyValidator</span><span class="p">(</span><span class="n">Validator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">messages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+                <span class="s">&#39;foo&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">&#39;A message.&#39;</span><span class="p">),</span>
+                <span class="s">&#39;bar&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">&#39;Another message.&#39;</span><span class="p">),</span>
+               <span class="p">}</span>
+
+    <span class="c"># your validation logic ...</span>
+</pre></div>
+</div>
+<p>Afterwards you just have to start the usual gettext process. I always use <a class="reference external" href="http://babel.edgewall.org">Babel</a> because it provides the very convenient <tt class="docutils literal"><span class="pre">pybabel</span></tt> tool which simplifies the workflow a lot:</p>
+<ul class="simple">
+<li>Collect the translatable strings in a po template (.pot) file, e.g. <tt class="docutils literal"><span class="pre">pybabel</span> <span class="pre">extract</span> <span class="pre">.</span> <span class="pre">--output=mymessages.pot</span></tt></li>
+<li>Create the initial po file for your new locale (only needed once): <tt class="docutils literal"><span class="pre">pybabel</span> <span class="pre">init</span> <span class="pre">--domain=pycerberus</span> <span class="pre">--input-file=mymessages.pot</span> <span class="pre">--locale=&lt;locale</span> <span class="pre">ID&gt;</span> <span class="pre">--output-dir=locales/</span></tt></li>
+<li>After every change to a translatable string in your source code, you need to recreate the pot file (see first step) and update the po file for your locale: <tt class="docutils literal"><span class="pre">pybabel</span> <span class="pre">update</span> <span class="pre">--domain=pycerberus</span> <span class="pre">--input-file=mymessages.pot</span> <span class="pre">--output-dir=locales/</span></tt></li>
+<li>Translate the messages for every locale.</li>
+<li>Compile the final po file into a mo file, e.g. <tt class="docutils literal"><span class="pre">pybabel</span> <span class="pre">compile</span> <span class="pre">--domain=pycerberus</span> <span class="pre">--directory=locales/</span></tt></li>
+</ul>
+</div>
+<div class="section" id="override-existing-messages-and-translations">
+<h3>Override existing messages and translations<a class="headerlink" href="#override-existing-messages-and-translations" title="Permalink to this headline">¶</a></h3>
+<p>Assume your custom validator is a subclass of a built-in validator but you
+don&#8217;t like the built-in translation. Of course you can replace pycerberus&#8217; mo
+files directly. However there is also another way where you don&#8217;t have to change
+pycerberus itself:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">CustomValidatorThatOverridesTranslations</span><span class="p">(</span><span class="n">Validator</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">messages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;empty&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">&#39;My custom message if the value is empty&#39;</span><span class="p">),</span>
+                <span class="s">&#39;custom&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">&#39;A custom message&#39;</span><span class="p">)}</span>
+
+    <span class="c"># ...</span>
+</pre></div>
+</div>
+<p>This validator will use a different message for the &#8216;empty&#8217; error and you can
+define custom translations for this key in your own .po files.</p>
+</div>
+<div class="section" id="modify-gettext-options-locale-dir-domain">
+<h3>Modify gettext options (locale dir, domain)<a class="headerlink" href="#modify-gettext-options-locale-dir-domain" title="Permalink to this headline">¶</a></h3>
+<p>The gettext framework is configurable, e.g. in which directory your .mo files
+are located and which domain (.mo filename) should be used. In pycerberus this
+is configurable by validator:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">ValidatorWithCustomGettextOptions</span><span class="p">(</span><span class="n">Validator</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">messages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;custom&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">&#39;A custom message&#39;</span><span class="p">)}</span>
+
+    <span class="k">def</span> <span class="nf">translation_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;domain&#39;</span><span class="p">:</span> <span class="s">&#39;myapp&#39;</span><span class="p">,</span> <span class="s">&#39;localedir&#39;</span><span class="p">:</span> <span class="s">&#39;/home/foo/locale&#39;</span><span class="p">}</span>
+
+    <span class="c"># ...</span>
+</pre></div>
+</div>
+<p>These translation parameters are passed directly to the &#8216;&#8217;gettext&#8217;&#8217; call so you
+can read about the available options in the <a class="reference external" href="http://docs.python.org/library/gettext.html">gettext documentation</a>.
+Your parameter will be applied for all messages which were declared in your
+validator class (but not in others). So you can modify the parameters for your
+own validator but keep all the existing parameters (and translations) for
+built-in validators.</p>
+</div>
+<div class="section" id="retrieve-translations-from-a-different-source-e-g-database">
+<h3>Retrieve translations from a different source (e.g. database)<a class="headerlink" href="#retrieve-translations-from-a-different-source-e-g-database" title="Permalink to this headline">¶</a></h3>
+<p>Sometimes you don&#8217;t want to use gettext. For instance you could store translations
+in a relational database so that your users can update the messages themselves
+without fiddling with gettext tools:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">ValidatorWithNonGettextTranslation</span><span class="p">(</span><span class="n">FrameworkValidator</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">messages</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;custom&#39;</span><span class="p">:</span> <span class="n">_</span><span class="p">(</span><span class="s">&#39;A custom message&#39;</span><span class="p">)}</span>
+
+    <span class="k">def</span> <span class="nf">translate_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">native_message</span><span class="p">,</span> <span class="n">translation_parameters</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="c"># fetch the translation for &#39;native_message&#39; from somewhere</span>
+        <span class="n">translated_message</span> <span class="o">=</span> <span class="n">get_translation_from_db</span><span class="p">(</span><span class="n">native_message</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">translated_message</span>
+</pre></div>
+</div>
+<p>You can use this mechanism to plug in arbitrary translation systems into
+gettext. Your translation mechanism is (again) only applied to keys which were
+defined by your specific validator class. If you want to use your translation
+system also for keys which were defined by built-in validators, you need to
+re-define these keys in your class as shown in the previous section.</p>
+</div>
+</div>
+<div class="section" id="using-validation-schemas">
+<h2>Using Validation Schemas<a class="headerlink" href="#using-validation-schemas" title="Permalink to this headline">¶</a></h2>
+<p>Especially in web development you often get multiple values from a form and you
+want to validate all these values easily. This is where &#8220;compound validators&#8221; /
+&#8220;schemas&#8221; come into play. A schema contains multiple validators, one validator
+for every field. There&#8217;s nothing special about these validators - they are just
+validators like the ones I explained in the previous section. Every field
+validator only cares about a single value and does not see the rest of the
+values.</p>
+<p>You can define a schema like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pycerberus.schema</span> <span class="kn">import</span> <span class="n">SchemaValidator</span>
+<span class="kn">from</span> <span class="nn">pycerberus.validators</span> <span class="kn">import</span> <span class="n">IntegerValidator</span><span class="p">,</span> <span class="n">StringValidator</span>
+
+<span class="n">schema</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">()</span>
+<span class="n">schema</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">IntegerValidator</span><span class="p">())</span>
+<span class="n">schema</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="n">StringValidator</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>Afterwards the schema behaves most like all basic validators - instead of a
+single input value they just get a dictionary:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">validated_values</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">process</span><span class="p">({</span><span class="s">&#39;id&#39;</span><span class="p">:</span> <span class="s">&#39;42&#39;</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;Foo Bar&#39;</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>If you declared a validator for a key which is not present in the input dict,
+the validator will get its &#8216;empty&#8217; value instead:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">id_required</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">()</span>
+<span class="n">id_required</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">IntegerValidator</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="bp">False</span><span class="p">))</span>
+<span class="n">id_required</span><span class="o">.</span><span class="n">process</span><span class="p">({})</span> <span class="c"># -&gt; {&#39;id&#39;: None}</span>
+
+<span class="n">id_optional</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">()</span>
+<span class="n">id_optional</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">IntegerValidator</span><span class="p">(</span><span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+<span class="n">id_optional</span><span class="o">.</span><span class="n">process</span><span class="p">({})</span> <span class="c"># raises an Exception because id None is not acceptable</span>
+</pre></div>
+</div>
+<p>Do not mix up the &#8216;default&#8217; value with the &#8216;empty&#8217; value:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">IntegerValidator</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The &#8216;default&#8217; value in this case is 42 but the &#8216;empty&#8217; value is still None.</p>
+<p>Please note that Schemas are &#8216;secure by default&#8217; which means that the returned
+dictionary contains only values that were validated. If you did not add a
+validator for a specific key, this key won&#8217;t be included in the result.</p>
+<p>If you need to ensure that no values with unknown keys are passed to the schema
+(even if those would be just dropped), you can call the method
+&#8216;&#8217;set_allow_additional_parameters(False)&#8217;&#8216;. After that the schema will raise an
+exception if it finds any unknown keys.</p>
+<div class="section" id="declarative-schemas">
+<h3>Declarative Schemas<a class="headerlink" href="#declarative-schemas" title="Permalink to this headline">¶</a></h3>
+<p>Schemas can be an important part in your application security. Also they define
+some kind of interface (which parameters does your application expect). Besides
+the algorithmic way to build a schema there is a &#8216;declarative&#8217; way so that you
+can review and audit your schemas easily:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MySchema</span><span class="p">(</span><span class="n">SchemaValidator</span><span class="p">):</span>
+    <span class="nb">id</span>   <span class="o">=</span> <span class="n">IntegerValidator</span><span class="p">()</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">StringValidator</span><span class="p">()</span>
+
+<span class="c"># using it...</span>
+<span class="n">schema</span> <span class="o">=</span> <span class="n">MySchema</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>It&#8217;s absolutely the same schema but the definition is way easier to read.</p>
+</div>
+<div class="section" id="schema-error-handling">
+<h3>Schema Error Handling<a class="headerlink" href="#schema-error-handling" title="Permalink to this headline">¶</a></h3>
+<p>All schema validators are executed even if one of the previous validators failed.
+Because of that you can display the user all errors at once:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">schema</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">()</span>
+<span class="n">schema</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="n">IntegerValidator</span><span class="p">())</span>
+<span class="n">schema</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="n">StringValidator</span><span class="p">())</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">schema</span><span class="o">.</span><span class="n">process</span><span class="p">({</span><span class="s">&#39;id&#39;</span><span class="p">:</span> <span class="s">&#39;invalid&#39;</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">})</span>
+<span class="k">except</span> <span class="n">InvalidDataError</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">e</span><span class="o">.</span><span class="n">error_dict</span><span class="p">()</span>    <span class="c"># {&#39;id&#39;: &lt;id validation error&gt;, &#39;name&#39;: &lt;id validation error&gt;}</span>
+    <span class="n">e</span><span class="o">.</span><span class="n">error_for</span><span class="p">(</span><span class="s">&#39;id&#39;</span><span class="p">)</span> <span class="c"># id validation error</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="validating-multiple-fields-in-a-schema">
+<h3>Validating multiple fields in a Schema<a class="headerlink" href="#validating-multiple-fields-in-a-schema" title="Permalink to this headline">¶</a></h3>
+<p>Sometimes you need to validate multiple fields in a schema - e.g. you need to
+check in a &#8216;change password&#8217; action that the password is entered the same twice.
+Or you need to check that a certain value is higher than another value in the
+form. That&#8217;s where <em>formvalidators</em> come into play.</p>
+<p>formvalidators are validators like all other field validators but they get the
+complete field dict as input, not a single item. Also formvalidators are run
+<em>after</em> all field validators successfully validated the input - therefore you
+have access to reasonably sane values, already converted to a handy Python data
+type. Opposite to simple field validators, the validation process fails
+immediately if one formvalidator fails.</p>
+<p>You can add formvalidators to a form like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">NumbersMatch</span><span class="p">(</span><span class="n">Validator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">fields</span><span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">fields</span><span class="p">[</span><span class="s">&#39;b&#39;</span> <span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&#39;no_match&#39;</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
+<span class="n">schema</span><span class="o">.</span><span class="n">add_formvalidator</span><span class="p">(</span><span class="n">NumbersMatch</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Of course there is also a declarative way to use form validators:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MySchema</span><span class="p">(</span><span class="n">SchemaValidator</span><span class="p">):</span>
+    <span class="c"># ...</span>
+    <span class="n">formvalidators</span> <span class="o">=</span> <span class="p">(</span><span class="n">NumbersMatch</span><span class="p">,</span> <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="schema-inheritance-build-multi-page-forms-without-duplication">
+<h3>Schema inheritance - build multi-page forms without duplication<a class="headerlink" href="#schema-inheritance-build-multi-page-forms-without-duplication" title="Permalink to this headline">¶</a></h3>
+<p>Validation schemas are an important piece of information: On the one hand they
+can serve as a kind of API specification (which parameters are accepted by your
+application) and on the other hand they are important for security audits (which
+constraints are put on your input values). Obviously this is something that you
+want to get right - duplicating this information only increases the likelyhood
+of bugs.</p>
+<p>The issue becomes especially annoying when you have a web application with a
+complex form (e.g. a new user registration process) that you want to split in
+multiple steps on different pages so that your users won&#8217;t drop out immediately
+when they see the huge form. It is good HTTP/ReST design practice to keep state
+on the client side. Therefore you pass fields from previous pages in hidden
+input fields to the next and for the final page it looks like there was one big
+form. This also has the advantage that you can shuffle the fields on the
+different pages without changing real logic.</p>
+<p>With that approach your pretty much settled - however you need a separate
+validation schema for every single page which is a huge duplication. With
+pycerberus you can avoid that by using &#8216;&#8217;schema inheritance&#8217;&#8216;:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">FirstPage</span><span class="p">(</span><span class="n">SchemaValidator</span><span class="p">):</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">IntegerValidator</span><span class="p">()</span>
+
+    <span class="n">formvalidators</span> <span class="o">=</span> <span class="p">(</span><span class="n">SomeValidator</span><span class="p">(),</span> <span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">SecondPage</span><span class="p">(</span><span class="n">FirstPage</span><span class="p">):</span>
+    <span class="c"># this schema contains also &#39;id&#39; validator</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">StringValidator</span><span class="p">()</span>
+
+    <span class="c"># formvalidators are implicitely appended so actually this schema has</span>
+    <span class="c"># these formvalidators: (SomeValidator(), AnotherValidator(), )</span>
+    <span class="n">formvalidators</span> <span class="o">=</span> <span class="p">(</span><span class="n">AnotherValidator</span><span class="p">(),</span> <span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">FinalPage</span><span class="p">(</span><span class="n">SecondPage</span><span class="p">):</span>
+    <span class="c"># this schema contains also &#39;id&#39; and &#39;name&#39; validators</span>
+    <span class="n">age</span> <span class="o">=</span> <span class="n">IntegerValidator</span><span class="p">()</span>
+
+    <span class="c"># This page contains again both formvalidators</span>
+</pre></div>
+</div>
+<p>As you can see, every page adds some validators while keeping the old ones. This
+eliminates the duplication problem described above,</p>
+<p>What happens if SecondPage declares a different validator for &#8216;id&#8217;? In this case
+it will just replace the &#8216;&#8217;IntegerValidator()&#8217;&#8217; declared by &#8216;&#8217;FirstPage&#8217;&#8216;!</p>
+</div>
+</div>
+<div class="section" id="support-for-python-3">
+<span id="python3"></span><h2>Support for Python 3<a class="headerlink" href="#support-for-python-3" title="Permalink to this headline">¶</a></h2>
+<p>I&#8217;m not using Python 3 for any project in production right now. However I&#8217;d like to support the Python 3 transition. Therefore I ensure that all tests also pass on Python 3 and I believe you can use pycerberus on Python 3 just fine. I&#8217;m testing Python 3 using the latest version of Fedora. As the Python 3 userbase is so small currently, I won&#8217;t make any effort to maintain compatibility for older versions of Python 3 (e.g. Python 3.0).</p>
+<p>Python 3 support for pycerberus is done by the help of the wonderful &#8216;2to3&#8217; tool which can do all required syntax changes for Python 3. By doing that, I can maintain a single source tree and all fixes for Python 2 are automatically in the Python 3 version.</p>
+<p>However there are some shortcomings that you should be aware of:</p>
+<ol class="arabic simple">
+<li>Full i18n support requires Babel and there is no version of Babel with Python 3 support yet. Therefore I don&#8217;t use Babel on Python 3. However you can get localized error messages if you use Babel with Python 2 to compile the catalog files. After the initial generation of the mo files (done at install time), Babel is not required anymore. For the most recent status of Babel with Python 3, please read <a class="reference external" href="http://babel.edgewall.org/ticket/209">http://babel.edgewall.org/ticket/209</a> . I plan on adding Python 3 support for Babel 1.0.</li>
+<li>nosetests introduced Python 3 in version 1.0, earlier versions don&#8217;t work. As nosetests is only necessary to run the unit tests, most people can ignore this limitation.</li>
+<li>2to3 support in pycerberus behaves differently than the distribute default: Whenever you call setup.py with Python 3 (e.g. for build/develop), 2to3 will be run on all Python source files. These will be modified in place so after you used Python 3 on a pycerberus working directory, you can not use it with Python 2 anymore. This is mostly because bitten (<a class="reference external" href="http://bitten.edgewall.org">http://bitten.edgewall.org</a>) does not support conditional build recipies yet. So this limitation is in place to have a build client testing also the Python 3 version of pycerberus.</li>
+</ol>
+<p>IMPORTANT:
+If you&#8217;re using pycerberus on Python 3, please tell me how it works for you! :-)</p>
+<div class="section" id="parse-input-with-schemas">
+<h3>Parse Input with Schemas<a class="headerlink" href="#parse-input-with-schemas" title="Permalink to this headline">¶</a></h3>
+<p>In the common &#8220;web form&#8221; use case you already get parameters mapped to keys.
+That&#8217;s usually the job of your web framework. However sometimes it&#8217;s not that
+easy: Before you can do input validation, you need to parse the user input from
+a string and convert that into a dict.</p>
+<p>This is where &#8216;&#8217;PositionalArgumentsParsingSchema()&#8217;&#8217; might help you: This schema
+takes a string and extracts several parameters from it. So you can use it to
+transform <tt class="docutils literal"><span class="pre">&quot;foo,</span> <span class="pre">42&quot;</span></tt> into <tt class="docutils literal"><span class="pre">dict(name=&quot;foo&quot;,</span> <span class="pre">value=42)</span></tt>.</p>
+<dl class="class">
+<dt id="pycerberus.schemas.PositionalArgumentsParsingSchema">
+<em class="property">class </em><tt class="descclassname">pycerberus.schemas.</tt><tt class="descname">PositionalArgumentsParsingSchema</tt><big>(</big><em>self</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pycerberus.schemas.PositionalArgumentsParsingSchema" title="Permalink to this definition">¶</a></dt>
+<dd><p>This schema parses a string containing arguments within a specified order
+and returns a dict where each of these parameters is mapped to a specific 
+key for easy retrieval.</p>
+<p>You specify the order of parameters (and the keys) in the class-level 
+attribute <tt class="docutils literal"><span class="pre">parameter_order</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">ConfigListSchema</span><span class="p">(</span><span class="n">PositionalArgumentsParsingSchema</span><span class="p">):</span>
+    <span class="n">first_key</span> <span class="o">=</span> <span class="n">StringValidator</span><span class="p">()</span>
+    <span class="n">second_key</span> <span class="o">=</span> <span class="n">IntegerValidator</span><span class="p">()</span>
+    <span class="n">parameter_order</span> <span class="o">=</span> <span class="p">(</span><span class="n">first_key</span><span class="p">,</span> <span class="n">second_key</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>By default the items are separated by comma though you can override in the
+method <tt class="docutils literal"><span class="pre">separator_pattern()</span></tt>. If there are more items than keys specified,
+this schema will behave like any other schema (depending if you set the
+class-level attribute <tt class="docutils literal"><span class="pre">allow_additional_parameters</span></tt>).</p>
+<dl class="method">
+<dt id="pycerberus.schemas.PositionalArgumentsParsingSchema.aggregate_values">
+<tt class="descname">aggregate_values</tt><big>(</big><em>parameter_names</em>, <em>arguments</em><big>)</big><a class="headerlink" href="#pycerberus.schemas.PositionalArgumentsParsingSchema.aggregate_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method can manipulate or aggregate parsed arguments. In this 
+class, it&#8217;s just a noop but sub classes can override this method to do
+more interesting stuff.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.schemas.PositionalArgumentsParsingSchema.keys">
+<tt class="descname">keys</tt><big>(</big><big>)</big><a class="headerlink" href="#pycerberus.schemas.PositionalArgumentsParsingSchema.keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all keys defined by this specific validator class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.schemas.PositionalArgumentsParsingSchema.message_for_key">
+<tt class="descname">message_for_key</tt><big>(</big><em>key</em>, <em>context</em><big>)</big><a class="headerlink" href="#pycerberus.schemas.PositionalArgumentsParsingSchema.message_for_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a message for a specific key. Implement this method if you 
+want to avoid calls to messages() which might be costly (otherwise 
+implementing this method is optional).</p>
+</dd></dl>
+
+</dd></dl>
+
+<p>This schema is used for example in <a class="reference external" href="http://www.schwarz.eu/opensource/projects/pymta">pymta</a>.
+to parse the SMTP command strings. Also I used it in my
+<a class="reference external" href="http://www.schwarz.eu/opensource/projects/ohloh_widgets_macro">OhlohWidgetsMacro</a>:
+Trac macros can get parameters but these are passed as a single string so the
+schema takes care of separating these arguments.</p>
+</div>
+</div>
+<div class="section" id="getting-help">
+<h2>Getting Help<a class="headerlink" href="#getting-help" title="Permalink to this headline">¶</a></h2>
+<p>So far I did not bother setting up a mailing list. If you have questions,
+please send an email to <a class="reference external" href="mailto:Felix&#46;Schwarz&#37;&#52;&#48;oss&#46;schwarz&#46;eu">Felix<span>&#46;</span>Schwarz<span>&#64;</span>oss<span>&#46;</span>schwarz<span>&#46;</span>eu</a>. When there are some users
+for pycerberus, I&#8217;ll create a mailing list.</p>
+</div>
+<div class="section" id="license">
+<h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
+<p>pycerberus is licensed under the MIT license. As there are no other dependencies
+(besides Python itself), you can easily use pycerberus in proprietary as well
+as GPL applications.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">pycerberus documentation</a><ul>
+<li><a class="reference internal" href="#installation-and-setup">Installation and Setup</a></li>
+<li><a class="reference internal" href="#background">Background</a></li>
+<li><a class="reference internal" href="#philosophy-and-design">Philosophy and Design</a><ul>
+<li><a class="reference internal" href="#rules-are-declared-explicitly-separating-policy-from-mechanism">Rules are declared explicitly: Separating policy from mechanism</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#development-status">Development Status</a></li>
+<li><a class="reference internal" href="#using-validators">Using Validators</a><ul>
+<li><a class="reference internal" href="#validation-errors">Validation Errors</a></li>
+<li><a class="reference internal" href="#configuring-validators">Configuring Validators</a></li>
+<li><a class="reference internal" href="#context">Context</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#available-validators">Available validators</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#writing-your-own-validators">Writing your own validators</a><ul>
+<li><a class="reference internal" href="#basevalidator">BaseValidator</a></li>
+<li><a class="reference internal" href="#validator">Validator</a></li>
+<li><a class="reference internal" href="#miscellaneous">Miscellaneous</a></li>
+<li><a class="reference internal" href="#putting-all-together-a-simple-validator">Putting all together - A simple validator</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#internationalization">Internationalization</a><ul>
+<li><a class="reference internal" href="#get-translated-error-messages">Get translated error messages</a></li>
+<li><a class="reference internal" href="#internal-gettext-details">Internal gettext details</a></li>
+<li><a class="reference internal" href="#translate-your-custom-messages">Translate your custom messages</a></li>
+<li><a class="reference internal" href="#override-existing-messages-and-translations">Override existing messages and translations</a></li>
+<li><a class="reference internal" href="#modify-gettext-options-locale-dir-domain">Modify gettext options (locale dir, domain)</a></li>
+<li><a class="reference internal" href="#retrieve-translations-from-a-different-source-e-g-database">Retrieve translations from a different source (e.g. database)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#using-validation-schemas">Using Validation Schemas</a><ul>
+<li><a class="reference internal" href="#declarative-schemas">Declarative Schemas</a></li>
+<li><a class="reference internal" href="#schema-error-handling">Schema Error Handling</a></li>
+<li><a class="reference internal" href="#validating-multiple-fields-in-a-schema">Validating multiple fields in a Schema</a></li>
+<li><a class="reference internal" href="#schema-inheritance-build-multi-page-forms-without-duplication">Schema inheritance - build multi-page forms without duplication</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#support-for-python-3">Support for Python 3</a><ul>
+<li><a class="reference internal" href="#parse-input-with-schemas">Parse Input with Schemas</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#getting-help">Getting Help</a></li>
+<li><a class="reference internal" href="#license">License</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="validators/index.html"
+                        title="next chapter">Available validators</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="validators/index.html" title="Available validators"
+             >next</a> |</li>
+        <li><a href="#">pycerberus v0.4.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2011 Felix Schwarz.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>

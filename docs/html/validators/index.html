@@ -1,0 +1,242 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Available validators &mdash; pycerberus v0.4.2 documentation</title>
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="pycerberus v0.4.2 documentation" href="../index.html" />
+    <link rel="prev" title="pycerberus documentation" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="pycerberus documentation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">pycerberus v0.4.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-pycerberus.validators"></span><div class="section" id="available-validators">
+<h1>Available validators<a class="headerlink" href="#available-validators" title="Permalink to this headline">¶</a></h1>
+<p>pycerberus contains some basic validators already. You can use them as they are
+or use them as a basis for more specialized validators. Below you find a list
+of all included validators.</p>
+</div>
+<span class="target" id="module-pycerberus.validators.basic_numbers"></span><dl class="class">
+<dt id="pycerberus.validators.basic_numbers.IntegerValidator">
+<em class="property">class </em><tt class="descclassname">pycerberus.validators.basic_numbers.</tt><tt class="descname">IntegerValidator</tt><big>(</big><em>self</em>, <em>min=None</em>, <em>max=None</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pycerberus.validators.basic_numbers.IntegerValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../index.html#pycerberus.api.Validator" title="pycerberus.api.Validator"><tt class="xref py py-class docutils literal"><span class="pre">pycerberus.api.Validator</span></tt></a></p>
+<dl class="method">
+<dt id="pycerberus.validators.basic_numbers.IntegerValidator.convert">
+<tt class="descname">convert</tt><big>(</big><em>value</em>, <em>context</em><big>)</big><a class="headerlink" href="#pycerberus.validators.basic_numbers.IntegerValidator.convert" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.validators.basic_numbers.IntegerValidator.keys">
+<tt class="descname">keys</tt><big>(</big><big>)</big><a class="headerlink" href="#pycerberus.validators.basic_numbers.IntegerValidator.keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all keys defined by this specific validator class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.validators.basic_numbers.IntegerValidator.message_for_key">
+<tt class="descname">message_for_key</tt><big>(</big><em>key</em>, <em>context</em><big>)</big><a class="headerlink" href="#pycerberus.validators.basic_numbers.IntegerValidator.message_for_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a message for a specific key. Implement this method if you 
+want to avoid calls to messages() which might be costly (otherwise 
+implementing this method is optional).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.validators.basic_numbers.IntegerValidator.messages">
+<tt class="descname">messages</tt><big>(</big><big>)</big><a class="headerlink" href="#pycerberus.validators.basic_numbers.IntegerValidator.messages" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.validators.basic_numbers.IntegerValidator.validate">
+<tt class="descname">validate</tt><big>(</big><em>value</em>, <em>context</em><big>)</big><a class="headerlink" href="#pycerberus.validators.basic_numbers.IntegerValidator.validate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-pycerberus.validators.domain"></span><dl class="class">
+<dt id="pycerberus.validators.domain.DomainNameValidator">
+<em class="property">class </em><tt class="descclassname">pycerberus.validators.domain.</tt><tt class="descname">DomainNameValidator</tt><big>(</big><em>self</em>, <em>default=NoValueSet</em>, <em>required=NoValueSet</em>, <em>strip=False</em><big>)</big><a class="headerlink" href="#pycerberus.validators.domain.DomainNameValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pycerberus.validators.string.StringValidator" title="pycerberus.validators.string.StringValidator"><tt class="xref py py-class docutils literal"><span class="pre">pycerberus.validators.string.StringValidator</span></tt></a></p>
+<p>A validator to check if an domain name is syntactically correct.</p>
+<dl class="method">
+<dt id="pycerberus.validators.domain.DomainNameValidator.keys">
+<tt class="descname">keys</tt><big>(</big><big>)</big><a class="headerlink" href="#pycerberus.validators.domain.DomainNameValidator.keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all keys defined by this specific validator class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.validators.domain.DomainNameValidator.message_for_key">
+<tt class="descname">message_for_key</tt><big>(</big><em>key</em>, <em>context</em><big>)</big><a class="headerlink" href="#pycerberus.validators.domain.DomainNameValidator.message_for_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a message for a specific key. Implement this method if you 
+want to avoid calls to messages() which might be costly (otherwise 
+implementing this method is optional).</p>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-pycerberus.validators.email"></span><dl class="class">
+<dt id="pycerberus.validators.email.EmailAddressValidator">
+<em class="property">class </em><tt class="descclassname">pycerberus.validators.email.</tt><tt class="descname">EmailAddressValidator</tt><big>(</big><em>self</em>, <em>default=NoValueSet</em>, <em>required=NoValueSet</em>, <em>strip=False</em><big>)</big><a class="headerlink" href="#pycerberus.validators.email.EmailAddressValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pycerberus.validators.domain.DomainNameValidator" title="pycerberus.validators.domain.DomainNameValidator"><tt class="xref py py-class docutils literal"><span class="pre">pycerberus.validators.domain.DomainNameValidator</span></tt></a></p>
+<p>A validator to check if an email address is syntactically correct.</p>
+<p>Please note that there is no clear definition of an &#8216;email address&#8217;. Some
+parts are defined in consecutive RFCs, there is a notion of &#8216;string that is 
+accepted by a MTA&#8217; and last but not least a fuzzy &#8216;general expectation&#8217; what
+an email address should be about.</p>
+<p>Therefore this validator is currently extremly simple and does not handle
+internationalized local parts/domains.</p>
+<dl class="docutils">
+<dt>For the future I envision some extensions here:</dt>
+<dd><ul class="first last simple">
+<li>support internationalized domain names (possibly also encode to/
+decode from idna) if specified by flag</li>
+<li>More flexible structure if there must be a second-level domain</li>
+</ul>
+</dd>
+<dt>Something that should not happen in this validator:</dt>
+<dd><ul class="first last simple">
+<li>Open SMTP connections to check if an account exists</li>
+<li>specify default domains if missing</li>
+</ul>
+</dd>
+</dl>
+<p>These things can be implemented in derived validators</p>
+<dl class="method">
+<dt id="pycerberus.validators.email.EmailAddressValidator.keys">
+<tt class="descname">keys</tt><big>(</big><big>)</big><a class="headerlink" href="#pycerberus.validators.email.EmailAddressValidator.keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all keys defined by this specific validator class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.validators.email.EmailAddressValidator.message_for_key">
+<tt class="descname">message_for_key</tt><big>(</big><em>key</em>, <em>context</em><big>)</big><a class="headerlink" href="#pycerberus.validators.email.EmailAddressValidator.message_for_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a message for a specific key. Implement this method if you 
+want to avoid calls to messages() which might be costly (otherwise 
+implementing this method is optional).</p>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-pycerberus.validators.string"></span><dl class="class">
+<dt id="pycerberus.validators.string.StringValidator">
+<em class="property">class </em><tt class="descclassname">pycerberus.validators.string.</tt><tt class="descname">StringValidator</tt><big>(</big><em>self</em>, <em>default=NoValueSet</em>, <em>required=NoValueSet</em>, <em>strip=False</em><big>)</big><a class="headerlink" href="#pycerberus.validators.string.StringValidator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../index.html#pycerberus.api.Validator" title="pycerberus.api.Validator"><tt class="xref py py-class docutils literal"><span class="pre">pycerberus.api.Validator</span></tt></a></p>
+<dl class="method">
+<dt id="pycerberus.validators.string.StringValidator.convert">
+<tt class="descname">convert</tt><big>(</big><em>value</em>, <em>context</em><big>)</big><a class="headerlink" href="#pycerberus.validators.string.StringValidator.convert" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.validators.string.StringValidator.is_empty">
+<tt class="descname">is_empty</tt><big>(</big><em>value</em>, <em>context</em><big>)</big><a class="headerlink" href="#pycerberus.validators.string.StringValidator.is_empty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.validators.string.StringValidator.keys">
+<tt class="descname">keys</tt><big>(</big><big>)</big><a class="headerlink" href="#pycerberus.validators.string.StringValidator.keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return all keys defined by this specific validator class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.validators.string.StringValidator.message_for_key">
+<tt class="descname">message_for_key</tt><big>(</big><em>key</em>, <em>context</em><big>)</big><a class="headerlink" href="#pycerberus.validators.string.StringValidator.message_for_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a message for a specific key. Implement this method if you 
+want to avoid calls to messages() which might be costly (otherwise 
+implementing this method is optional).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pycerberus.validators.string.StringValidator.messages">
+<tt class="descname">messages</tt><big>(</big><big>)</big><a class="headerlink" href="#pycerberus.validators.string.StringValidator.messages" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../index.html"
+                        title="previous chapter">pycerberus documentation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/validators/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="pycerberus documentation"
+             >previous</a> |</li>
+        <li><a href="../index.html">pycerberus v0.4.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2009-2011 Felix Schwarz.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>
