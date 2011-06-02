@@ -2,6 +2,7 @@
 *~
 *.pyc
 *.rc
+*.log
 
 build/*
 build-stamp
@@ -19,4 +20,4 @@ configure-stamp
 *.postrm.debhelper
 *.prerm.debhelper
 *.substvars
-
+pycerberus.egg-info

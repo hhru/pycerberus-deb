@@ -1,0 +1,15 @@
+Source: pycerberus
+Section: unknown
+Priority: extra
+Maintainer: Alex Dvoretsky (hh.ru project package signing) <alex@dvoretsky.name>
+Build-Depends:
+  cdbs,
+  debhelper (>= 7),
+  python-support,
+  python,
+Standards-Version: 3.8.1
+
+Package: pycerberus
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python
+Description: Pycerberus validation library
